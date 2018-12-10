@@ -2,11 +2,20 @@
   "object": {
     "pins": [
       {
+        "package": "CRuntime",
+        "repositoryURL": "https://github.com/wickwirew/CRuntime.git",
+        "state": {
+          "branch": null,
+          "revision": "8d0dd0ca3787d15682c1f44de3d298459870b121",
+          "version": "1.0.0"
+        }
+      },
+      {
         "package": "GraphQL",
         "repositoryURL": "git@github.com:SportlabsTechnology/GraphQL.git",
         "state": {
           "branch": "preNIO-swift42",
-          "revision": "391c2a8e3bb0253275ec651d478e53c6f14b84eb",
+          "revision": "ca22edf7cdabc80bd671ba759460a9cf0b6a12aa",
           "version": null
         }
       },
@@ -15,7 +24,7 @@
         "repositoryURL": "https://github.com/wickwirew/Runtime.git",
         "state": {
           "branch": null,
-          "revision": "1e80c719ab1a53de9e176a2dcb594779150ffc5a",
+          "revision": "40cdfbad9650512507c060824e1c4e9fc2ca721d",
           "version": null
         }
       }
