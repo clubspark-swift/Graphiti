@@ -15,17 +15,17 @@
         "repositoryURL": "git@github.com:SportlabsTechnology/GraphQL.git",
         "state": {
           "branch": null,
-          "revision": "2f16f9e81ca8ed47ff3e974f68dc98567e2b3898",
-          "version": null
+          "revision": "9d74c47a0f94758024f0f93ebd741908131fb1bf",
+          "version": "0.5.4"
         }
       },
       {
         "package": "Runtime",
-        "repositoryURL": "https://github.com/wickwirew/Runtime.git",
+        "repositoryURL": "git@github.com:SportlabsTechnology/Runtime.git",
         "state": {
           "branch": null,
           "revision": "40cdfbad9650512507c060824e1c4e9fc2ca721d",
-          "version": null
+          "version": "1.1.0"
         }
       }
     ]
