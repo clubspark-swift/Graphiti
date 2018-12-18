@@ -9,7 +9,7 @@ let package = Package(
     ],
 
     dependencies: [
-        .package(url: "git@github.com:SportlabsTechnology/GraphQL.git", .branch("preNIO-swift42")),
+        .package(url: "git@github.com:SportlabsTechnology/GraphQL.git", .revision("2f16f9e81ca8ed47ff3e974f68dc98567e2b3898")),
     ],
 
     targets: [

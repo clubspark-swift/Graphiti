@@ -14,8 +14,8 @@
         "package": "GraphQL",
         "repositoryURL": "git@github.com:SportlabsTechnology/GraphQL.git",
         "state": {
-          "branch": "preNIO-swift42",
-          "revision": "ca22edf7cdabc80bd671ba759460a9cf0b6a12aa",
+          "branch": null,
+          "revision": "2f16f9e81ca8ed47ff3e974f68dc98567e2b3898",
           "version": null
         }
       },
