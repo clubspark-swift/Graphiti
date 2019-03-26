@@ -23,9 +23,9 @@
         "package": "GraphQL",
         "repositoryURL": "https://github.com/GraphQLSwift/GraphQL.git",
         "state": {
-          "branch": "master",
-          "revision": "2ba73c3691dbcdeb6e09ad4f6df46536ba692c83",
-          "version": null
+          "branch": null,
+          "revision": "1d31d8c2e53be3f230fe552aafe19f995dd5f65e",
+          "version": "0.9.0"
         }
       },
       {
