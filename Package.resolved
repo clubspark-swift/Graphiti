@@ -6,8 +6,8 @@
         "repositoryURL": "https://github.com/vapor/core.git",
         "state": {
           "branch": null,
-          "revision": "1794ff138bd669175a2528d27695028d7cb30471",
-          "version": "3.5.0"
+          "revision": "cbe38246dca3a4283addd8a120aa9d007f18ddd4",
+          "version": "3.7.2"
         }
       },
       {
@@ -21,11 +21,11 @@
       },
       {
         "package": "GraphQL",
-        "repositoryURL": "https://github.com/GraphQLSwift/GraphQL.git",
+        "repositoryURL": "https://github.com/SportlabsTechnology/GraphQL.git",
         "state": {
-          "branch": null,
-          "revision": "1d31d8c2e53be3f230fe552aafe19f995dd5f65e",
-          "version": "0.9.0"
+          "branch": "master",
+          "revision": "86ddb43504fcbf88c20d4d6e61428eeb6c4c693d",
+          "version": null
         }
       },
       {
@@ -42,8 +42,8 @@
         "repositoryURL": "https://github.com/apple/swift-nio.git",
         "state": {
           "branch": null,
-          "revision": "03c541a24dd0558c942b15d8464eb75d70a921c4",
-          "version": "1.12.1"
+          "revision": "29a9f2aca71c8afb07e291336f1789337ce235dd",
+          "version": "1.13.2"
         }
       },
       {
