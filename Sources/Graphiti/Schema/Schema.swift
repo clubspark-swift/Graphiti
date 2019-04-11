@@ -493,6 +493,8 @@ public typealias NoContext = Void
 
 public struct Schema<Root, Context, EventLoop: EventLoopGroup> {
     let schema: GraphQLSchema
+    
+    private var persistedQueryResults: [String: PersistedQueryRetrievalResult<String>] = [:]
 
     public init(_ build: (SchemaBuilder<Root, Context, EventLoop>) throws -> Void) throws {
         let builder = SchemaBuilder<Root, Context, EventLoop>()
@@ -591,5 +593,61 @@ public struct Schema<Root, Context, EventLoop: EventLoopGroup> {
             variableValues: variables,
             operationName: operationName
         )
+    }
+}
+
+public extension Schema {
+    
+    public mutating func setPersistedQuery(_ query: String, forKey key: String) throws {
+        
+        let source = Source(body: query, name: "GraphQL request")
+        do {
+            let documentAST = try parse(instrumentation: NoOpInstrumentation, source: source)
+            
+            let validationErrors = validate(instrumentation: NoOpInstrumentation, schema: schema, ast: documentAST)
+            
+            if !validationErrors.isEmpty {
+                self.persistedQueryResults[key] = .validateErrors(schema, validationErrors)
+            }
+            else {
+                self.persistedQueryResults[key] = .result(schema, documentAST)
+            }
+        }
+        catch let error as GraphQLError {
+            self.persistedQueryResults[key] = .parseError(error)
+        }
+        catch {
+            throw error
+        }
+        
+    }
+    
+    public func execute(
+        queryId: String,
+        context: Context,
+        variables: [String: Map] = [:],
+        operationName: String? = nil
+        ) throws -> Map {
+        guard Root.self is Void.Type else {
+            throw GraphQLError(
+                message: "Root value is required."
+            )
+        }
+        
+        return try graphql(queryRetrieval: self,
+                           queryId: queryId,
+                           contextValue: context,
+                           variableValues: variables,
+                           operationName: operationName
+        )
+    }
+}
+
+extension Schema: PersistedQueryRetrieval {
+    
+    public typealias Id = String
+    
+    public func lookup(_ id: String) throws -> PersistedQueryRetrievalResult<String> {
+        return persistedQueryResults[id] ?? .unknownId(id)
     }
 }
