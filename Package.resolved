@@ -6,8 +6,8 @@
         "repositoryURL": "https://github.com/wickwirew/CRuntime.git",
         "state": {
           "branch": null,
-          "revision": "afec8728ad670dc992a1cc701338b2c20b707a92",
-          "version": "2.1.1"
+          "revision": "95f911318d8c885f6fc05e971471f94adfd39405",
+          "version": "2.1.2"
         }
       },
       {
@@ -15,7 +15,7 @@
         "repositoryURL": "https://github.com/SportlabsTechnology/GraphQL.git",
         "state": {
           "branch": "preNIO-swift5",
-          "revision": "bfcf105bec17251234ebf64acbb9ec6f486735a3",
+          "revision": "93a871b5515d6bdf18c59af63c553eafbf65eb3a",
           "version": null
         }
       },
@@ -24,7 +24,7 @@
         "repositoryURL": "git@github.com:SportlabsTechnology/Runtime.git",
         "state": {
           "branch": "master",
-          "revision": "8868585090a498d9c39309f96b18a61f75a1f1d1",
+          "revision": "49433c66d7be2a0c340e5c81500a85a49e8b9a7a",
           "version": null
         }
       }
