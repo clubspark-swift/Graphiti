@@ -622,12 +622,13 @@ public extension Schema {
         
     }
     
-    public func execute(
+    func execute(
         queryId: String,
         context: Context,
+        worker: EventLoopGroup,
         variables: [String: Map] = [:],
         operationName: String? = nil
-        ) throws -> Map {
+        ) throws -> EventLoopFuture<Map> {
         guard Root.self is Void.Type else {
             throw GraphQLError(
                 message: "Root value is required."
@@ -636,7 +637,8 @@ public extension Schema {
         
         return try graphql(queryRetrieval: self,
                            queryId: queryId,
-                           contextValue: context,
+                           context: context,
+                           eventLoopGroup: worker,
                            variableValues: variables,
                            operationName: operationName
         )
