@@ -6,8 +6,8 @@
         "repositoryURL": "https://github.com/vapor/core.git",
         "state": {
           "branch": null,
-          "revision": "02f1d0d0eabe68f10d1efa0decdfa0e6e737e985",
-          "version": "3.8.0"
+          "revision": "2731f8ba0cf274a61c9bd6ab43550f692ffaf879",
+          "version": "3.9.0"
         }
       },
       {
@@ -15,8 +15,8 @@
         "repositoryURL": "https://github.com/wickwirew/CRuntime.git",
         "state": {
           "branch": null,
-          "revision": "1d820f9211a9836ea30735c3fe0d77908fd230ff",
-          "version": "2.0.1"
+          "revision": "95f911318d8c885f6fc05e971471f94adfd39405",
+          "version": "2.1.2"
         }
       },
       {
@@ -24,7 +24,7 @@
         "repositoryURL": "https://github.com/SportlabsTechnology/GraphQL.git",
         "state": {
           "branch": "swift5",
-          "revision": "f658ca1169b50ac7d259194df8e5685fb38edf69",
+          "revision": "8639ed83c64bcebeff9c0e5a6680cc233620b5dd",
           "version": null
         }
       },
@@ -32,9 +32,9 @@
         "package": "Runtime",
         "repositoryURL": "https://github.com/wickwirew/Runtime.git",
         "state": {
-          "branch": null,
-          "revision": "4687a21c28bbbf728288e5dce0841a465ed0c2d0",
-          "version": "2.0.0"
+          "branch": "nested-struct-crash",
+          "revision": "304fa5dec869e0c3862936f68846b3c59f00bc30",
+          "version": null
         }
       },
       {
@@ -42,8 +42,8 @@
         "repositoryURL": "https://github.com/apple/swift-nio.git",
         "state": {
           "branch": null,
-          "revision": "29a9f2aca71c8afb07e291336f1789337ce235dd",
-          "version": "1.13.2"
+          "revision": "ba7970fe396e8198b84c6c1b44b38a1d4e2eb6bd",
+          "version": "1.14.1"
         }
       },
       {
