@@ -15,13 +15,13 @@
         "repositoryURL": "https://github.com/SportlabsTechnology/GraphQL.git",
         "state": {
           "branch": "preNIO-swift5",
-          "revision": "aff57086af8a3a65d7a05d0ef5de17eaf5fab772",
+          "revision": "d9ffda59226816d45fb3e0c47f7e1e13403a9749",
           "version": null
         }
       },
       {
         "package": "Runtime",
-        "repositoryURL": "git@github.com:SportlabsTechnology/Runtime.git",
+        "repositoryURL": "https://github.com/wickwirew/Runtime.git",
         "state": {
           "branch": "nested-struct-crash",
           "revision": "304fa5dec869e0c3862936f68846b3c59f00bc30",
