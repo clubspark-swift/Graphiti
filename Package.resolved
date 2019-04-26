@@ -24,7 +24,7 @@
         "repositoryURL": "https://github.com/SportlabsTechnology/GraphQL.git",
         "state": {
           "branch": "swift5",
-          "revision": "8639ed83c64bcebeff9c0e5a6680cc233620b5dd",
+          "revision": "9236fc19a1954f914cd3990890dad5d6570eb962",
           "version": null
         }
       },
@@ -32,9 +32,9 @@
         "package": "Runtime",
         "repositoryURL": "https://github.com/wickwirew/Runtime.git",
         "state": {
-          "branch": "nested-struct-crash",
-          "revision": "304fa5dec869e0c3862936f68846b3c59f00bc30",
-          "version": null
+          "branch": null,
+          "revision": "c167476b07fe8cc65fdf064076a4081c3269d14a",
+          "version": "2.1.0"
         }
       },
       {
