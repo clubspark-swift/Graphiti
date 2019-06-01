@@ -348,7 +348,7 @@ public extension SchemaBuilder {
         return outputType
     }
 
-    public func getInputType(from type: Any.Type, field: String) throws -> GraphQLInputType {
+    func getInputType(from type: Any.Type, field: String) throws -> GraphQLInputType {
         guard let graphQLType = getGraphQLType(from: type) else {
             throw GraphQLError(
                 message:
@@ -598,7 +598,7 @@ public struct Schema<Root, Context, EventLoop: EventLoopGroup> {
 
 public extension Schema {
     
-    public mutating func setPersistedQuery(_ query: String, forKey key: String) throws {
+    mutating func setPersistedQuery(_ query: String, forKey key: String) throws {
         
         let source = Source(body: query, name: "GraphQL request")
         do {
