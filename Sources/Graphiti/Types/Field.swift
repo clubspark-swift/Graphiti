@@ -301,3 +301,48 @@ public class FieldBuilder<Root, Context, EventLoop: EventLoopGroup, Type> {
         fields[name] = field
     }
 }
+
+extension FieldBuilder {
+    
+    public func field<A : Arguments, Output>(
+        name: String,
+        type: (TypeReference<Output>?).Type = (TypeReference<Output>?).self,
+        description: String? = nil,
+        deprecationReason: String? = nil,
+        resolve: ResolveField<Type, A, Context, EventLoop, EventLoopFuture<Output?>>? = nil
+        ) throws {
+        var r: GraphQLFieldResolve? = nil
+        
+        let arguments = try schema.arguments(type: A.self, field: name)
+
+        if let resolve = resolve {
+            r = { source, args, context, eventLoopGroup, info in
+                guard let s = source as? Type else {
+                    throw GraphQLError(message: "Expected source type \(Type.self) but got \(Swift.type(of: source))")
+                }
+
+                guard let c = context as? Context else {
+                    throw GraphQLError(message: "Expected context type \(Context.self) but got \(Swift.type(of: context))")
+                }
+
+                guard let e = eventLoopGroup as? EventLoop else {
+                    throw GraphQLError(message: "Expected eventloop type \(EventLoop.self) but got \(Swift.type(of: eventLoopGroup))")
+                }
+
+                let a = try A(map: args)
+                
+                return try resolve(s, a, c, e, info).flatMap{ return e.next().newSucceededFuture(result: $0) }
+            }
+        }
+
+        let field = GraphQLField(
+            type: try schema.getOutputType(from: (TypeReference<Output>?).self, field: name),
+            description: description,
+            deprecationReason: deprecationReason,
+            args: arguments,
+            resolve: r
+        )
+
+        fields[name] = field
+    }
+}
