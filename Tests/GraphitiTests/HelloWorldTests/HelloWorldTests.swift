@@ -3,189 +3,320 @@ import XCTest
 import GraphQL
 import NIO
 
-extension Float : InputType, OutputType {
-    public init(map: Map) throws {
-        self.init(try map.asDouble())
+struct ID : Codable {
+    let id: String
+    
+    init(_ id: String) {
+        self.id = id
     }
-
-    public func asMap() throws -> Map {
-        return .double(Double(self))
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        self.id = try container.decode(String.self)
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(self.id)
     }
 }
 
-class HelloWorldTests : XCTestCase {
-    let schema = try! Schema<NoRoot, NoContext, MultiThreadedEventLoopGroup> { schema in
-        try schema.query { query in
-
-            try query.field(name: "hello", type: String.self) { (_, _, _, eventLoopGroup, _) in
-                return eventLoopGroup.next().newSucceededFuture(result: "world")
-            }
-        }
+struct User : Codable {
+    let id: String
+    let name: String?
+    
+    init(id: String, name: String?) {
+        self.id = id
+        self.name = name
     }
+    
+    init(_ input: UserInput) {
+        self.id = input.id
+        self.name = input.name
+    }
+}
 
+struct UserInput : Codable {
+    let id: String
+    let name: String?
+}
+
+final class Context {
+    func hello() -> String {
+        "world"
+    }
+}
+
+struct HelloRoot {
+    func hello(context: Context, arguments: NoArguments) -> String {
+        context.hello()
+    }
+    
+    func asyncHello(
+        context: Context,
+        arguments: NoArguments,
+        group: EventLoopGroup
+    ) -> EventLoopFuture<String> {
+        group.next().makeSucceededFuture(context.hello())
+    }
+    
+    struct FloatArguments : Codable {
+        let float: Float
+    }
+    
+    func getFloat(context: Context, arguments: FloatArguments) -> Float {
+        arguments.float
+    }
+    
+    struct IDArguments : Codable {
+        let id: ID
+    }
+    
+    func getId(context: Context, arguments: IDArguments) -> ID {
+        arguments.id
+    }
+    
+    func getUser(context: Context, arguments: NoArguments) -> User {
+        User(id: "123", name: "John Doe")
+    }
+    
+    struct AddUserArguments : Codable {
+        let user: UserInput
+    }
+    
+    func addUser(context: Context, arguments: AddUserArguments) -> User {
+        User(arguments.user)
+    }
+}
+
+struct HelloAPI : API {
+    let root = HelloRoot()
+    let context = Context()
+    
+    let schema = try! Schema<HelloRoot, Context>(
+        Scalar(Float.self)
+            .description("The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](http://en.wikipedia.org/wiki/IEEE_floating_point)."),
+
+        Scalar(ID.self)
+            .description("The `ID` scalar type represents a unique identifier."),
+        
+        Type(User.self,
+            Field("id", at: \.id),
+            Field("name", at: \.name)
+        ),
+
+        Input(UserInput.self,
+            InputField("id", at: \.id),
+            InputField("name", at: \.name)
+        ),
+        
+        Query(
+            Field("hello", at: HelloRoot.hello),
+            Field("asyncHello", at: HelloRoot.asyncHello),
+            
+            Field("float", at: HelloRoot.getFloat,
+                Argument("float", at: \.float)
+            ),
+            
+            Field("id", at: HelloRoot.getId,
+                Argument("id", at: \.id)
+            ),
+            
+            Field("user", at: HelloRoot.getUser)
+        ),
+
+        Mutation(
+            Field("addUser", at: HelloRoot.addUser,
+                Argument("user", at: \.user)
+            )
+        )
+    )
+}
+
+class HelloWorldTests : XCTestCase {
+    private let api = HelloAPI()
+    private var group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
+    
+    deinit {
+        try? self.group.syncShutdownGracefully()
+    }
+    
     func testHello() throws {
-        let eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-        defer {
-            XCTAssertNoThrow(try eventLoopGroup.syncShutdownGracefully())
-        }
-
         let query = "{ hello }"
-        let expected: Map = [
-            "data": [
-                "hello": "world"
-            ]
-        ]
-        let result = try schema.execute(request: query, eventLoopGroup: eventLoopGroup).wait()
-        XCTAssertEqual(result, expected)
+        let expected = GraphQLResult(data: ["hello": "world"])
+        
+        let expectation = XCTestExpectation()
+        
+        api.execute(
+            request: query,
+            context: api.context,
+            on: group
+        ).whenSuccess { result in
+            XCTAssertEqual(result, expected)
+            expectation.fulfill()
+        }
+        
+        wait(for: [expectation], timeout: 10)
+    }
+    
+    func testHelloAsync() throws {
+        let query = "{ asyncHello }"
+        let expected = GraphQLResult(data: ["asyncHello": "world"])
+        
+        let expectation = XCTestExpectation()
+        
+        api.execute(
+            request: query,
+            context: api.context,
+            on: group
+        ).whenSuccess { result in
+            XCTAssertEqual(result, expected)
+            expectation.fulfill()
+        }
+        
+        wait(for: [expectation], timeout: 10)
     }
 
     func testBoyhowdy() throws {
-        let eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-        defer {
-            XCTAssertNoThrow(try eventLoopGroup.syncShutdownGracefully())
-        }
-
         let query = "{ boyhowdy }"
 
-        let expectedErrors: Map = [
-            "errors": [
-                [
-                    "message": "Cannot query field \"boyhowdy\" on type \"Query\".",
-                    "locations": [["line": 1, "column": 3]]
-                ]
+        let expected = GraphQLResult(
+            errors: [
+                GraphQLError(
+                    message: "Cannot query field \"boyhowdy\" on type \"Query\".",
+                    locations: [SourceLocation(line: 1, column: 3)]
+                )
             ]
-        ]
+        )
+        
+        let expectation = XCTestExpectation()
 
-        let result = try schema.execute(request: query, eventLoopGroup: eventLoopGroup).wait()
-        XCTAssertEqual(result, expectedErrors)
+        api.execute(
+            request: query,
+            context: api.context,
+            on: group
+        ).whenSuccess { result in
+            XCTAssertEqual(result, expected)
+            expectation.fulfill()
+        }
+        
+        wait(for: [expectation], timeout: 10)
     }
-
+    
     func testScalar() throws {
-        let eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-        defer {
-            XCTAssertNoThrow(try eventLoopGroup.syncShutdownGracefully())
-        }
-
-        let schema = try Schema<NoRoot, NoContext, MultiThreadedEventLoopGroup> { schema in
-            try schema.scalar(type: Float.self) { scalar in
-                scalar.description = "The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](http://en.wikipedia.org/wiki/IEEE_floating_point)."
-
-                scalar.parseValue { value in
-                    if case .double = value {
-                        return value
-                    }
-
-                    if case .int(let int) = value {
-                        return .double(Double(int))
-                    }
-
-                    return .null
-                }
-
-                scalar.parseLiteral { ast in
-                    if let ast = ast as? FloatValue, let double = Double(ast.value) {
-                        return .double(double)
-                    }
-
-                    if let ast = ast as? IntValue, let double = Double(ast.value) {
-                        return .double(double)
-                    }
-
-                    return .null
-                }
-            }
-
-            try schema.query { query in
-                struct FloatArguments : Arguments {
-                    let float: Float
-                }
-
-                try query.field(name: "float", type: Float.self) { (_, arguments: FloatArguments, _, eventLoopGroup, _) in
-                    return eventLoopGroup.next().newSucceededFuture(result: arguments.float)
-                }
-            }
-        }
-
         var query: String
-        let expected: Map = ["data": ["float": 4.0]]
-        var result: Map
+        var expected = GraphQLResult(data: ["float": 4.0])
 
-        query = "query Query($float: Float!) { float(float: $float) }"
-        result = try schema.execute(request: query, eventLoopGroup: eventLoopGroup, variables: ["float": 4]).wait()
-        XCTAssertEqual(result, expected)
+        query = """
+        query Query($float: Float!) {
+            float(float: $float)
+        }
+        """
 
-        query = "query Query { float(float: 4) }"
-        result = try schema.execute(request: query, eventLoopGroup: eventLoopGroup).wait()
-        XCTAssertEqual(result, expected)
+        let expectationA = XCTestExpectation()
+        
+        api.execute(
+            request: query,
+            context: api.context,
+            on: group,
+            variables: ["float": 4]
+        ).whenSuccess { result in
+            XCTAssertEqual(result, expected)
+            expectationA.fulfill()
+        }
+        
+        wait(for: [expectationA], timeout: 10)
+
+        query = """
+        query Query {
+            float(float: 4)
+        }
+        """
+        
+        let expectationB = XCTestExpectation()
+        
+        api.execute(
+            request: query,
+            context: api.context,
+            on: group
+        ).whenSuccess { result in
+            XCTAssertEqual(result, expected)
+            expectationB.fulfill()
+        }
+        
+        wait(for: [expectationB], timeout: 10)
+        
+        query = """
+        query Query($id: String!) {
+            id(id: $id)
+        }
+        """
+        
+        expected = GraphQLResult(data: ["id": "85b8d502-8190-40ab-b18f-88edd297d8b6"])
+        
+        let expectationC = XCTestExpectation()
+        
+        api.execute(
+            request: query,
+            context: api.context,
+            on: group,
+            variables: ["id": "85b8d502-8190-40ab-b18f-88edd297d8b6"]
+        ).whenSuccess { result in
+            XCTAssertEqual(result, expected)
+            expectationC.fulfill()
+        }
+        
+        wait(for: [expectationC], timeout: 10)
+        
+        query = """
+        query Query {
+            id(id: "85b8d502-8190-40ab-b18f-88edd297d8b6")
+        }
+        """
+        
+        let expectationD = XCTestExpectation()
+        
+        api.execute(
+            request: query,
+            context: api.context,
+            on: group
+        ).whenSuccess { result in
+            XCTAssertEqual(result, expected)
+            expectationD.fulfill()
+        }
+        
+        wait(for: [expectationD], timeout: 10)
     }
 
     func testInput() throws {
-        let eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-        defer {
-            XCTAssertNoThrow(try eventLoopGroup.syncShutdownGracefully())
-        }
-
-        struct Foo : OutputType {
-            let id: String
-            let name : String?
-
-            static func fromInput(_ input: FooInput) -> Foo {
-                return Foo(id: input.id, name: input.name)
+        let mutation = """
+        mutation addUser($user: UserInput!) {
+            addUser(user: $user) {
+                id,
+                name
             }
         }
-
-        struct FooInput : InputType {
-            let id: String
-            let name : String?
-        }
-
-        let schema = try Schema<NoRoot, NoContext, MultiThreadedEventLoopGroup> { schema in
-
-            try schema.object(type: Foo.self) { builder in
-
-                try builder.exportFields()
-            }
-
-            try schema.query { query in
-
-                try query.field(name: "foo", type: (Foo?).self) { (_, _, _, eventLoopGroup, _) in
-                    return eventLoopGroup.next().newSucceededFuture(result: Foo(id: "123", name: "bar"))
-                }
-            }
-
-            try schema.inputObject(type: FooInput.self) { builder in
-
-                try builder.exportFields()
-            }
-
-            struct AddFooArguments : Arguments {
-
-                let input: FooInput
-            }
-
-            try schema.mutation { mutation in
-
-                try mutation.field(name: "addFoo", type: Foo.self) { (_, arguments: AddFooArguments, _, eventLoopgroup, _) in
-
-                    debugPrint(arguments)
-                    return eventLoopGroup.next().newSucceededFuture(result: Foo.fromInput(arguments.input))
-                }
-            }
-
-        }
-
-        let mutation = "mutation addFoo($input: FooInput!) { addFoo(input:$input) { id, name } }"
-        let variables: [String:Map] = ["input" : [ "id" : "123", "name" : "bob" ]]
-        let expected: Map = ["data": ["addFoo" : [ "id" : "123", "name" : "bob" ]]]
-        do {
-            let result = try schema.execute(request: mutation, eventLoopGroup: eventLoopGroup, variables: variables).wait()
+        """
+        
+        let variables: [String: Map] = ["user" : [ "id" : "123", "name" : "bob" ]]
+        
+        let expected = GraphQLResult(
+            data: ["addUser" : [ "id" : "123", "name" : "bob" ]]
+        )
+        
+        let expectation = XCTestExpectation()
+        
+        api.execute(
+            request: mutation,
+            context: api.context,
+            on: group,
+            variables: variables
+        ).whenSuccess { result in
             XCTAssertEqual(result, expected)
-            debugPrint(result)
+            expectation.fulfill()
         }
-            catch {
-                debugPrint(error)
-            }
-
+        
+        wait(for: [expectation], timeout: 10)
     }
 }
 
@@ -193,7 +324,10 @@ extension HelloWorldTests {
     static var allTests: [(String, (HelloWorldTests) -> () throws -> Void)] {
         return [
             ("testHello", testHello),
+            ("testHelloAsync", testHelloAsync),
             ("testBoyhowdy", testBoyhowdy),
+            ("testScalar", testScalar),
+            ("testInput", testInput),
         ]
     }
 }

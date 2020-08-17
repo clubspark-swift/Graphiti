@@ -5,9 +5,9 @@ Graphiti is a Swift library for building GraphQL schemas/types fast, safely and 
 [![Swift][swift-badge]][swift-url]
 [![License][mit-badge]][mit-url]
 [![Slack][slack-badge]][slack-url]
-[![Travis][travis-badge]][travis-url]
-[![Codecov][codecov-badge]][codecov-url]
-[![Codebeat][codebeat-badge]][codebeat-url]
+[![GitHub Actions][gh-actions-badge]][gh-actions-url]
+[![Maintainability][maintainability-badge]][maintainability-url]
+[![Coverage][coverage-badge]][coverage-url]
 
 Looking for help? Find resources [from the community](http://graphql.org/community/).
 
@@ -30,7 +30,7 @@ import PackageDescription
 
 let package = Package(
     dependencies: [
-        .Package(url: "https://github.com/GraphQLSwift/Graphiti.git", majorVersion: 0, minor: 8),
+        .Package(url: "https://github.com/GraphQLSwift/Graphiti.git", .upToNextMinor(from: "0.20.1")),
     ]
 )
 ```
@@ -38,66 +38,121 @@ let package = Package(
 Graphiti provides two important capabilities: building a type schema, and
 serving queries against that type schema.
 
-First, build a Graphiti type schema which maps to your code base.
+#### Defining entities
+
+First, we declare our regular Swift entities.
 
 ```swift
-let schema = try Schema<Void> { schema in
-    schema.query { query in
-        try query.field(name: "hello", type: String.self) { (_, _, _, eventLoop, _) in
-            return eventLoop.next().newSucceededFuture(result: "world")
-        }
+struct Message : Codable {
+    let content: String
+}
+```
+
+One of the main design decisions behind Graphiti is **not** to polute your entities declarations. This way you can bring your entities to any other solution with ease.
+
+#### Defining the context
+
+Second step is to create your application's **context**. The context will be passed to all of your field resolver functions. This allows you to apply dependency injection to your API. You will usually use the Context as the state holder of your API. Therefore, this will often be a `class`.
+
+```swift
+/**
+ * This data is hard coded for the sake of the demo, but you could imagine
+ * fetching this data from a database or a backend service instead.
+ */
+final class MessageContext {
+    func message() -> Message {
+        Message(content: "Hello, world!")
     }
 }
 ```
 
-This defines a simple schema with one type and one field, that resolves
-to a fixed value. More complex examples are included in the [Tests](Tests/GraphitiTests/) directory.
+Notice again that this step doesn't require Graphiti. It's purely business logic.
 
-Then, serve the result of a query against that type schema.
+#### Defining the API implementation
+
+Now that we have our entities and context we can create the API itself.
 
 ```swift
-let query = "{ hello }"
-let eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-let result = try schema.execute(request: query, eventLoopGroup: eventLoopGroup).wait()
-try eventLoopGroup.syncShutdownGracefully()
-print(result)
-```
+import Graphiti
 
-Output:
-
-```json
-{
-    "data": {
-        "hello": "world"
+struct MessageRoot {
+    func message(context: MessageContext, arguments: NoArguments) -> Message {
+        context.message()
     }
 }
 ```
 
-This runs a query fetching the one field defined. The `execute` function will
-first ensure the query is syntactically and semantically valid before executing
-it, reporting errors otherwise.
+#### Defining the API
+
+Now we can finally define the Schema.
 
 ```swift
-let query = "{ boyhowdy }"
-let result = try schema.execute(request: query)
-print(result)
+struct MessageAPI : API {
+    let root: MessageRoot
+    let schema: Schema<MessageRoot, MessageContext>
+    
+    // Notice that `API` allows dependency injection.
+    // You could pass mocked subtypes of `root` and `context` when testing, for example.
+    init(root: MessageRoot) throws {
+        self.root = root
+
+        self.schema = try Schema<MessageRoot, MessageContext>(
+            Type(Message.self,
+                Field("content", at: \.content)
+            ),
+
+            Query(
+                Field("message", at: MessageRoot.message)
+            )
+        )
+    }
+}
 ```
 
-Output:
+#### Querying
+
+To query the schema we need to instantiate the api and pass in an EventLoopGroup to feed the execute function alongside the query itself.
+
+```swift
+import NIO
+
+let root = MessageRoot()
+let context = MessageContext()
+let api = try MessageAPI(root: root)
+let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
+        
+defer {
+    try? group.syncShutdownGracefully()
+}
+
+api.execute(
+    request: "{ message { content } }",
+    context: context,
+    on: group
+).whenSuccess { result in
+    print(result)
+}
+```
+
+The output will be:
 
 ```json
-{
-    "errors": [
-        {
-            "locations": [
-                {
-                    "line": 1,
-                    "column": 3
-                }
-            ], 
-            "message": "Cannot query field \"boyhowdy\" on type \"Query\"."
-        }
-    ]
+{"data":{"message":{"content":"Hello, world!"}}}
+```
+
+`API.execute` returns a `GraphQLResult` which adopts `Encodable`. You can use it with a `JSONEncoder` to send the response back to the client using JSON.
+
+#### Async resolvers
+
+To use async resolvers, just add one more parameter with type `EventLoopGroup` to the resolver function and change the return type to `EventLoopFuture<YouReturnType>`. Don't forget to import NIO.
+
+```swift
+import NIO
+
+struct MessageRoot {
+    func message(context: MessageContext, arguments: NoArguments, group: EventLoopGroup) -> EventLoopFuture<Message> {
+        group.next().makeSucceededFuture(store.message())
+    }
 }
 ```
 
@@ -105,16 +160,20 @@ Output:
 
 This project is released under the MIT license. See [LICENSE](LICENSE) for details.
 
-[swift-badge]: https://img.shields.io/badge/Swift-4-orange.svg?style=flat
+[swift-badge]: https://img.shields.io/badge/Swift-5.2-orange.svg?style=flat
 [swift-url]: https://swift.org
+
 [mit-badge]: https://img.shields.io/badge/License-MIT-blue.svg?style=flat
 [mit-url]: https://tldrlegal.com/license/mit-license
-[slack-image]: http://s13.postimg.org/ybwy92ktf/Slack.png
+
 [slack-badge]: https://zewo-slackin.herokuapp.com/badge.svg
 [slack-url]: http://slack.zewo.io
-[travis-badge]: https://travis-ci.org/GraphQLSwift/Graphiti.svg?branch=master
-[travis-url]: https://travis-ci.org/GraphQLSwift/Graphiti
-[codecov-badge]: https://codecov.io/gh/GraphQLSwift/Graphiti/branch/master/graph/badge.svg
-[codecov-url]: https://codecov.io/gh/GraphQLSwift/Graphiti
-[codebeat-badge]: https://codebeat.co/badges/df113480-6e62-43e0-8c9d-4571c4307e19
-[codebeat-url]: https://codebeat.co/projects/github-com-graphqlswift-graphiti
+
+[gh-actions-badge]: https://github.com/GraphQLSwift/Graphiti/workflows/Tests/badge.svg
+[gh-actions-url]: https://github.com/GraphQLSwift/Graphiti/actions?query=workflow%3ATests
+
+[maintainability-badge]: https://api.codeclimate.com/v1/badges/25559824033fc2caa94e/maintainability
+[maintainability-url]: https://codeclimate.com/github/GraphQLSwift/Graphiti/maintainability
+
+[coverage-badge]: https://api.codeclimate.com/v1/badges/25559824033fc2caa94e/test_coverage
+[coverage-url]: https://codeclimate.com/github/GraphQLSwift/Graphiti/test_coverage
