@@ -18,7 +18,7 @@ class HelloWorldTests : XCTestCase {
         try schema.query { query in
 
             try query.field(name: "hello", type: String.self) { (_, _, _, eventLoopGroup, _) in
-                return eventLoopGroup.next().newSucceededFuture(result: "world")
+                return eventLoopGroup.next().makeSucceededFuture("world")
             }
         }
     }
@@ -101,7 +101,7 @@ class HelloWorldTests : XCTestCase {
                 }
 
                 try query.field(name: "float", type: Float.self) { (_, arguments: FloatArguments, _, eventLoopGroup, _) in
-                    return eventLoopGroup.next().newSucceededFuture(result: arguments.float)
+                    return eventLoopGroup.next().makeSucceededFuture(arguments.float)
                 }
             }
         }
@@ -149,7 +149,7 @@ class HelloWorldTests : XCTestCase {
             try schema.query { query in
 
                 try query.field(name: "foo", type: (Foo?).self) { (_, _, _, eventLoopGroup, _) in
-                    return eventLoopGroup.next().newSucceededFuture(result: Foo(id: "123", name: "bar"))
+                    return eventLoopGroup.next().makeSucceededFuture(Foo(id: "123", name: "bar"))
                 }
             }
 
@@ -168,7 +168,7 @@ class HelloWorldTests : XCTestCase {
                 try mutation.field(name: "addFoo", type: Foo.self) { (_, arguments: AddFooArguments, _, eventLoopgroup, _) in
 
                     debugPrint(arguments)
-                    return eventLoopGroup.next().newSucceededFuture(result: Foo.fromInput(arguments.input))
+                    return eventLoopGroup.next().makeSucceededFuture(Foo.fromInput(arguments.input))
                 }
             }
 

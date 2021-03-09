@@ -520,11 +520,11 @@ class StarWarsQueryTests : XCTestCase {
 
             try schema.object(type: A.self) { a in
                 try a.field(name: "nullableA", type: (TypeReference<A>?).self) { (_, _, _, eventLoopGroup, _) in
-                    eventLoopGroup.next().newSucceededFuture(result: A())
+                    eventLoopGroup.next().makeSucceededFuture(A())
                 }
                 
                 try a.field(name: "nonNullA", type: TypeReference<A>.self) { (_, _, _, eventLoopGroup, _) in
-                    eventLoopGroup.next().newSucceededFuture(result: A())
+                    eventLoopGroup.next().makeSucceededFuture(A())
                 }
                 
                 try a.field(name: "throws", type: String.self) { (_, _, _, _, _) in
@@ -538,7 +538,7 @@ class StarWarsQueryTests : XCTestCase {
 
             try schema.query { query in
                 try query.field(name: "nullableA", type: (A?).self) { (_, _, _, eventLoopGroup, _) in
-                    eventLoopGroup.next().newSucceededFuture(result: A())
+                    eventLoopGroup.next().makeSucceededFuture(A())
                 }
             }
         }

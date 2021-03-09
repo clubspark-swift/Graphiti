@@ -1,4 +1,4 @@
-// swift-tools-version:5.0
+// swift-tools-version:5.2
 import PackageDescription
 
 let package = Package(
@@ -9,7 +9,7 @@ let package = Package(
     ],
 
     dependencies: [
-    .package(url: "https://github.com/SportlabsTechnology/GraphQL.git", .branch("swift5")),
+    .package(url: "https://github.com/SportlabsTechnology/GraphQL.git", .branch("nio2")),
     ],
 
     targets: [

@@ -201,7 +201,7 @@ let starWarsSchema = try! Schema<NoRoot, NoContext, MultiThreadedEventLoopGroup>
             type: [Character].self,
             description: "The friends of the human, or an empty list if they have none.",
             resolve: { human, _, _, eventLoopGroup, _ in
-                return eventLoopGroup.next().newSucceededFuture(result: getFriends(character: human))
+                return eventLoopGroup.next().makeSucceededFuture(getFriends(character: human))
             }
         )
 
@@ -210,7 +210,7 @@ let starWarsSchema = try! Schema<NoRoot, NoContext, MultiThreadedEventLoopGroup>
             type: (String?).self,
             description: "Where are they from and how they came to be who they are.",
             resolve: { _, _, _, eventLoopGroup, _ in
-                return eventLoopGroup.next().newSucceededFuture(result: try getSecretBackStory())
+                return eventLoopGroup.next().makeSucceededFuture(try getSecretBackStory())
             }
         )
     }
@@ -239,7 +239,7 @@ let starWarsSchema = try! Schema<NoRoot, NoContext, MultiThreadedEventLoopGroup>
             type: [Character].self,
             description: "The friends of the droid, or an empty list if they have none.",
             resolve: { droid, _, _, eventLoopGroup, _ in
-                return eventLoopGroup.next().newSucceededFuture(result: getFriends(character: droid))
+                return eventLoopGroup.next().makeSucceededFuture(getFriends(character: droid))
 
             }
         )
@@ -249,7 +249,7 @@ let starWarsSchema = try! Schema<NoRoot, NoContext, MultiThreadedEventLoopGroup>
             type: (String?).self,
             description: "Where are they from and how they came to be who they are.",
             resolve: { _, _, _, eventLoopGroup, _ in
-                return eventLoopGroup.next().newSucceededFuture(result: try getSecretBackStory())
+                return eventLoopGroup.next().makeSucceededFuture(try getSecretBackStory())
             }
         )
     }
@@ -290,7 +290,7 @@ let starWarsSchema = try! Schema<NoRoot, NoContext, MultiThreadedEventLoopGroup>
         }
 
         try query.field(name: "hero") { (_, arguments: HeroArguments, _, eventLoopGroup, _) in
-            return eventLoopGroup.next().newSucceededFuture(result: getHero(episode: arguments.episode))
+            return eventLoopGroup.next().makeSucceededFuture(getHero(episode: arguments.episode))
 
         }
 
@@ -299,8 +299,8 @@ let starWarsSchema = try! Schema<NoRoot, NoContext, MultiThreadedEventLoopGroup>
             static let descriptions = ["id": "id of the human"]
         }
 
-        try query.field(name: "human") { (_, arguments: HumanArguments, _, eventLoopGroup, _) in
-            return eventLoopGroup.next().newSucceededFuture(result: getHuman(id: arguments.id))
+        try query.fieldOptional(name: "human") { (_, arguments: HumanArguments, _, eventLoopGroup, _) -> EventLoopFuture<Human?> in
+            return eventLoopGroup.next().makeSucceededFuture(getHuman(id: arguments.id))
 
         }
 
@@ -309,8 +309,8 @@ let starWarsSchema = try! Schema<NoRoot, NoContext, MultiThreadedEventLoopGroup>
             static let descriptions = ["id": "id of the droid"]
         }
 
-        try query.field(name: "droid") { (_, arguments: DroidArguments, _, eventLoopGroup, _) in
-            return eventLoopGroup.next().newSucceededFuture(result: getDroid(id: arguments.id))
+        try query.fieldOptional(name: "droid") { (_, arguments: DroidArguments, _, eventLoopGroup, _) in
+            return eventLoopGroup.next().makeSucceededFuture(getDroid(id: arguments.id))
 
         }
 
@@ -320,7 +320,7 @@ let starWarsSchema = try! Schema<NoRoot, NoContext, MultiThreadedEventLoopGroup>
         }
 
         try query.field(name: "search") { (_, arguments: SearchArguments, _, eventLoopGroup, _) in
-            return eventLoopGroup.next().newSucceededFuture(result: search(for: arguments.query))
+            return eventLoopGroup.next().makeSucceededFuture(search(for: arguments.query))
 
         }
 

@@ -81,7 +81,7 @@ public class FieldBuilder<Root, Context, EventLoop: EventLoopGroup, Type> {
                     throw GraphQLError(message: "Expected eventloop type \(EventLoop.self) but got \(Swift.type(of: eventLoopGroup))")
                 }
 
-                return try resolve(s, NoArguments(), c, e, info).flatMap{ return e.next().newSucceededFuture(result: $0) }
+                return try resolve(s, NoArguments(), c, e, info).flatMap{ return e.next().makeSucceededFuture($0) }
             }
         }
 
@@ -119,7 +119,7 @@ public class FieldBuilder<Root, Context, EventLoop: EventLoopGroup, Type> {
                     throw GraphQLError(message: "Expected eventloop type \(EventLoop.self) but got \(Swift.type(of: eventLoopGroup))")
                 }
 
-                return try resolve(s, NoArguments(), c, e, info).flatMap{ return e.next().newSucceededFuture(result: $0) }
+                return try resolve(s, NoArguments(), c, e, info).flatMap{ return e.next().makeSucceededFuture($0) }
             }
         }
 
@@ -157,7 +157,7 @@ public class FieldBuilder<Root, Context, EventLoop: EventLoopGroup, Type> {
                     throw GraphQLError(message: "Expected eventloop type \(EventLoop.self) but got \(Swift.type(of: eventLoopGroup))")
                 }
 
-                return try resolve(s, NoArguments(), c, e, info).flatMap{ return e.next().newSucceededFuture(result: $0) }
+                return try resolve(s, NoArguments(), c, e, info).flatMap{ return e.next().makeSucceededFuture($0) }
             }
         }
 
@@ -210,7 +210,7 @@ public class FieldBuilder<Root, Context, EventLoop: EventLoopGroup, Type> {
                     throw GraphQLError(message: "Expected eventloop type \(EventLoop.self) but got \(Swift.type(of: eventLoopGroup))")
                 }
 
-                return  try resolve(s, NoArguments(), c, e, info).flatMap{ return e.next().newSucceededFuture(result: $0) }
+                return  try resolve(s, NoArguments(), c, e, info).flatMap{ return e.next().makeSucceededFuture($0) }
             }
         }
 
@@ -225,7 +225,7 @@ public class FieldBuilder<Root, Context, EventLoop: EventLoopGroup, Type> {
         fields[name] = field
     }
 
-    public func field<A : Arguments, O>(
+    public func fieldOptional<A : Arguments, O>(
         name: String,
         type: (O?).Type = (O?).self,
         description: String? = nil,
@@ -255,7 +255,7 @@ public class FieldBuilder<Root, Context, EventLoop: EventLoopGroup, Type> {
                         throw GraphQLError(message: "Expected eventloop type \(EventLoop.self) but got \(Swift.type(of: eventLoopGroup))")
                     }
 
-                    return try resolve(s, a, c, e, info).flatMap{ return e.next().newSucceededFuture(result: $0) }
+                    return try resolve(s, a, c, e, info).flatMap{ return e.next().makeSucceededFuture($0) }
                 }
             }
         )
@@ -293,7 +293,7 @@ public class FieldBuilder<Root, Context, EventLoop: EventLoopGroup, Type> {
                         throw GraphQLError(message: "Expected eventloop type \(EventLoop.self) but got \(Swift.type(of: eventLoopGroup))")
                     }
 
-                    return try resolve(s, a, c, e, info).flatMap{ return e.next().newSucceededFuture(result: $0) }
+                    return try resolve(s, a, c, e, info).flatMap{ return e.next().makeSucceededFuture($0) }
                 }
             }
         )
@@ -331,7 +331,7 @@ extension FieldBuilder {
 
                 let a = try A(map: args)
                 
-                return try resolve(s, a, c, e, info).flatMap{ return e.next().newSucceededFuture(result: $0) }
+                return try resolve(s, a, c, e, info).flatMap{ return e.next().makeSucceededFuture($0) }
             }
         }
 
