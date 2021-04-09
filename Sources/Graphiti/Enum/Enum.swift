@@ -1,6 +1,6 @@
 import GraphQL
 
-public final class Enum<RootType, Context, EnumType : Encodable & RawRepresentable> : Component<RootType, Context> where EnumType.RawValue == String {
+public final class Enum<RootType, Context, EnumType : Encodable & RawRepresentable> : Component<RootType, Context> {
     private let values: [String: EnumType]
     
     override func update(builder: SchemaBuilder) throws {
@@ -9,8 +9,16 @@ public final class Enum<RootType, Context, EnumType : Encodable & RawRepresentab
             description: description,
             values: values.reduce(into: [:]) { result, value in
                 
+                var map: Map
+                
+                if let intValue = value.value.rawValue as? Int {
+                    map = Map(integerLiteral: intValue)
+                }else {
+                    map = Map(stringLiteral: value.value.rawValue as! String)
+                }
+                
                 result[value.key] = GraphQLEnumValue(
-                    value: Map(stringLiteral: value.key),
+                    value: map,
                     description: "",
                     deprecationReason: ""
                 )
