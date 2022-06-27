@@ -1,7 +1,7 @@
 import XCTest
-@testable import Graphiti
 import GraphQL
 import NIO
+@testable import Graphiti
 
 struct ID : Codable {
     let id: String
@@ -24,36 +24,52 @@ struct ID : Codable {
 struct User : Codable {
     let id: String
     let name: String?
+    let friends: [User]?
     
-    init(id: String, name: String?) {
+    init(id: String, name: String?, friends: [User]?) {
         self.id = id
         self.name = name
+        self.friends = friends
     }
     
     init(_ input: UserInput) {
         self.id = input.id
         self.name = input.name
+        if let friends = input.friends {
+            self.friends = friends.map{ User($0) }
+        } else {
+            self.friends = nil
+        }
+    }
+    
+    func toEvent(context: HelloContext, arguments: NoArguments) throws -> UserEvent {
+        return UserEvent(user: self)
     }
 }
 
 struct UserInput : Codable {
     let id: String
     let name: String?
+    let friends: [UserInput]?
 }
 
-final class Context {
+struct UserEvent : Codable {
+    let user: User
+}
+
+final class HelloContext {
     func hello() -> String {
         "world"
     }
 }
 
-struct HelloRoot {
-    func hello(context: Context, arguments: NoArguments) -> String {
+struct HelloResolver {
+    func hello(context: HelloContext, arguments: NoArguments) -> String {
         context.hello()
     }
     
     func asyncHello(
-        context: Context,
+        context: HelloContext,
         arguments: NoArguments,
         group: EventLoopGroup
     ) -> EventLoopFuture<String> {
@@ -64,7 +80,7 @@ struct HelloRoot {
         let float: Float
     }
     
-    func getFloat(context: Context, arguments: FloatArguments) -> Float {
+    func getFloat(context: HelloContext, arguments: FloatArguments) -> Float {
         arguments.float
     }
     
@@ -72,65 +88,71 @@ struct HelloRoot {
         let id: ID
     }
     
-    func getId(context: Context, arguments: IDArguments) -> ID {
+    func getId(context: HelloContext, arguments: IDArguments) -> ID {
         arguments.id
     }
     
-    func getUser(context: Context, arguments: NoArguments) -> User {
-        User(id: "123", name: "John Doe")
+    func getUser(context: HelloContext, arguments: NoArguments) -> User {
+        User(id: "123", name: "John Doe", friends: nil)
     }
     
     struct AddUserArguments : Codable {
         let user: UserInput
     }
     
-    func addUser(context: Context, arguments: AddUserArguments) -> User {
+    func addUser(context: HelloContext, arguments: AddUserArguments) -> User {
         User(arguments.user)
     }
 }
 
 struct HelloAPI : API {
-    let root = HelloRoot()
-    let context = Context()
+    let resolver = HelloResolver()
+    let context = HelloContext()
     
-    let schema = try! Schema<HelloRoot, Context>(
+    let schema = try! Schema<HelloResolver, HelloContext> {
         Scalar(Float.self)
-            .description("The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](http://en.wikipedia.org/wiki/IEEE_floating_point)."),
+            .description("The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](http://en.wikipedia.org/wiki/IEEE_floating_point).")
 
         Scalar(ID.self)
-            .description("The `ID` scalar type represents a unique identifier."),
+            .description("The `ID` scalar type represents a unique identifier.")
         
-        Type(User.self,
-            Field("id", at: \.id),
+        Type(User.self) {
+            Field("id", at: \.id)
             Field("name", at: \.name)
-        ),
+            Field("friends", at: \.friends, as: [TypeReference<User>]?.self)
+        }
 
-        Input(UserInput.self,
-            InputField("id", at: \.id),
+        Input(UserInput.self) {
+            InputField("id", at: \.id)
             InputField("name", at: \.name)
-        ),
+            InputField("friends", at: \.friends, as: [TypeReference<UserInput>]?.self)
+        }
         
-        Query(
-            Field("hello", at: HelloRoot.hello),
-            Field("asyncHello", at: HelloRoot.asyncHello),
+        Type(UserEvent.self) {
+            Field("user", at: \.user)
+        }
+        
+        Query {
+            Field("hello", at: HelloResolver.hello)
+            Field("asyncHello", at: HelloResolver.asyncHello)
             
-            Field("float", at: HelloRoot.getFloat,
+            Field("float", at: HelloResolver.getFloat) {
                 Argument("float", at: \.float)
-            ),
+            }
             
-            Field("id", at: HelloRoot.getId,
+            Field("id", at: HelloResolver.getId) {
                 Argument("id", at: \.id)
-            ),
+            }
             
-            Field("user", at: HelloRoot.getUser)
-        ),
+            Field("user", at: HelloResolver.getUser)
+        }
 
-        Mutation(
-            Field("addUser", at: HelloRoot.addUser,
+        Mutation {
+            Field("addUser", at: HelloResolver.addUser) {
                 Argument("user", at: \.user)
-            )
-        )
-    )
+            }
+        }
+    }
 }
 
 class HelloWorldTests : XCTestCase {
@@ -302,6 +324,41 @@ class HelloWorldTests : XCTestCase {
         
         let expected = GraphQLResult(
             data: ["addUser" : [ "id" : "123", "name" : "bob" ]]
+        )
+        
+        let expectation = XCTestExpectation()
+        
+        api.execute(
+            request: mutation,
+            context: api.context,
+            on: group,
+            variables: variables
+        ).whenSuccess { result in
+            XCTAssertEqual(result, expected)
+            expectation.fulfill()
+        }
+        
+        wait(for: [expectation], timeout: 10)
+    }
+    
+    func testInputRecursive() throws {
+        let mutation = """
+        mutation addUser($user: UserInput!) {
+            addUser(user: $user) {
+                id,
+                name,
+                friends {
+                    id,
+                    name
+                }
+            }
+        }
+        """
+        
+        let variables: [String: Map] = ["user" : [ "id" : "123", "name" : "bob", "friends": [["id": "124", "name": "jeff"]]]]
+        
+        let expected = GraphQLResult(
+            data: ["addUser" : [ "id" : "123", "name" : "bob", "friends": [["id": "124", "name": "jeff"]]]]
         )
         
         let expectation = XCTestExpectation()

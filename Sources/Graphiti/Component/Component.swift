@@ -1,4 +1,6 @@
-open class Component<RootType, Context> {
+import GraphQL
+
+open class Component<Resolver, Context> {
     let name: String
     var description: String? = nil
     
@@ -7,7 +9,7 @@ open class Component<RootType, Context> {
     }
     
     
-    func update(builder: SchemaBuilder) throws {}
+    func update(typeProvider: SchemaTypeProvider, coders: Coders) throws {}
 }
 
 public extension Component {

@@ -1,6 +1,6 @@
 # Graphiti 
 
-Graphiti is a Swift library for building GraphQL schemas/types fast, safely and easily.
+Graphiti is a Swift library for building GraphQL schemas fast, safely and easily.
 
 [![Swift][swift-badge]][swift-url]
 [![License][mit-badge]][mit-url]
@@ -48,66 +48,62 @@ struct Message : Codable {
 }
 ```
 
-One of the main design decisions behind Graphiti is **not** to polute your entities declarations. This way you can bring your entities to any other solution with ease.
+⭐️ One of the main design decisions behind Graphiti is **not** to polute your entities declarations. This way you can bring your entities to any other solution with ease.
 
 #### Defining the context
 
-Second step is to create your application's **context**. The context will be passed to all of your field resolver functions. This allows you to apply dependency injection to your API. You will usually use the Context as the state holder of your API. Therefore, this will often be a `class`.
+Second step is to create your application's **context**. The context will be passed to all of your field resolver functions. This allows you to apply dependency injection to your API. This is the place where you can put code that talks to a database or another service.
 
 ```swift
-/**
- * This data is hard coded for the sake of the demo, but you could imagine
- * fetching this data from a database or a backend service instead.
- */
-final class MessageContext {
+struct Context {
     func message() -> Message {
         Message(content: "Hello, world!")
     }
 }
 ```
 
-Notice again that this step doesn't require Graphiti. It's purely business logic.
+⭐️ Notice again that this step doesn't require Graphiti. It's purely business logic.
 
-#### Defining the API implementation
+#### Defining the GraphQL API resolver
 
-Now that we have our entities and context we can create the API itself.
+Now that we have our entities and context we can create the GraphQL API resolver.
 
 ```swift
 import Graphiti
 
-struct MessageRoot {
-    func message(context: MessageContext, arguments: NoArguments) -> Message {
+struct Resolver {
+    func message(context: Context, arguments: NoArguments) -> Message {
         context.message()
     }
 }
 ```
 
-#### Defining the API
+#### Defining the GraphQL API schema
 
-Now we can finally define the Schema.
+Now we can finally define the GraphQL API with its schema.
 
 ```swift
 struct MessageAPI : API {
-    let root: MessageRoot
-    let schema: Schema<MessageRoot, MessageContext>
+    let resolver: Resolver
+    let schema: Schema<Resolver, Context>
     
-    // Notice that `API` allows dependency injection.
-    // You could pass mocked subtypes of `root` and `context` when testing, for example.
-    init(root: MessageRoot) throws {
-        self.root = root
+    init(resolver: Resolver) throws {
+        self.resolver = resolver
 
-        self.schema = try Schema<MessageRoot, MessageContext>(
-            Type(Message.self,
+        self.schema = try Schema<Resolver, Context> {
+            Type(Message.self) {
                 Field("content", at: \.content)
-            ),
+            }
 
-            Query(
-                Field("message", at: MessageRoot.message)
-            )
-        )
+            Query {
+                Field("message", at: Resolver.message)
+            }
+        }
     }
 }
 ```
+
+⭐️ Notice that `API` allows dependency injection. You could pass mocks of `resolver` and `context` when testing, for example.
 
 #### Querying
 
@@ -116,9 +112,9 @@ To query the schema we need to instantiate the api and pass in an EventLoopGroup
 ```swift
 import NIO
 
-let root = MessageRoot()
-let context = MessageContext()
-let api = try MessageAPI(root: root)
+let resolver = Resolver()
+let context = Context()
+let api = try MessageAPI(resolver: resolver)
 let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
         
 defer {
@@ -149,18 +145,32 @@ To use async resolvers, just add one more parameter with type `EventLoopGroup` t
 ```swift
 import NIO
 
-struct MessageRoot {
-    func message(context: MessageContext, arguments: NoArguments, group: EventLoopGroup) -> EventLoopFuture<Message> {
-        group.next().makeSucceededFuture(store.message())
+struct Resolver {
+    func message(context: Context, arguments: NoArguments, group: EventLoopGroup) -> EventLoopFuture<Message> {
+        group.next().makeSucceededFuture(context.message())
     }
 }
 ```
+
+#### Subscription
+
+This library supports GraphQL subscriptions. To use them, you must create a concrete subclass of the `EventStream` class that implements event streaming
+functionality.
+
+If you don't feel like creating a subclass yourself, you can use the [GraphQLRxSwift](https://github.com/GraphQLSwift/GraphQLRxSwift) repository
+to integrate [RxSwift](https://github.com/ReactiveX/RxSwift) observables out-of-the-box. Or you can use that repository as a reference to connect a different 
+stream library like [ReactiveSwift](https://github.com/ReactiveCocoa/ReactiveSwift), [OpenCombine](https://github.com/OpenCombine/OpenCombine), or
+one that you've created yourself.
+
+## Star Wars API example
+
+Check the [Star Wars API](Tests/GraphitiTests/StarWarsAPI/StarWarsAPI.swift) for a more complete example.
 
 ## License
 
 This project is released under the MIT license. See [LICENSE](LICENSE) for details.
 
-[swift-badge]: https://img.shields.io/badge/Swift-5.2-orange.svg?style=flat
+[swift-badge]: https://img.shields.io/badge/Swift-5.4-orange.svg?style=flat
 [swift-url]: https://swift.org
 
 [mit-badge]: https://img.shields.io/badge/License-MIT-blue.svg?style=flat

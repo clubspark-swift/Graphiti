@@ -1,36 +1,57 @@
 import GraphQL
 import NIO
 
-public final class Schema<RootType, Context> {
+public final class Schema<Resolver, Context> {
     public let schema: GraphQLSchema
 
-    private init(components: [Component<RootType, Context>]) throws {
-        let builder = SchemaBuilder()
+    private init(
+        coders: Coders,
+        components: [Component<Resolver, Context>]
+    ) throws {
+        let typeProvider = SchemaTypeProvider()
         
         for component in components {
-            try component.update(builder: builder)
+            try component.update(typeProvider: typeProvider, coders: coders)
         }
         
-        guard let query = builder.query else {
+        guard let query = typeProvider.query else {
             fatalError("Query type is required.")
         }
         
         self.schema = try GraphQLSchema(
             query: query,
-            mutation: builder.mutation,
-            subscription: builder.subscription,
-            types: builder.types,
-            directives: builder.directives
+            mutation: typeProvider.mutation,
+            subscription: typeProvider.subscription,
+            types: typeProvider.types,
+            directives: typeProvider.directives
+        )
+    }
+}
+
+public extension Schema {
+    convenience init(
+        coders: Coders = Coders(),
+        @ComponentBuilder<Resolver, Context> _ components: () -> Component<Resolver, Context>
+    ) throws {
+        try self.init(
+            coders: coders,
+            components: [components()]
         )
     }
     
-    public convenience init(_ components: Component<RootType, Context>...) throws {
-        try self.init(components: components)
+    convenience init(
+        coders: Coders = Coders(),
+        @ComponentBuilder<Resolver, Context> _ components: () -> [Component<Resolver, Context>]
+    ) throws {
+        try self.init(
+            coders: coders,
+            components: components()
+        )
     }
     
-    public func execute(
+    func execute(
         request: String,
-        root: RootType,
+        resolver: Resolver,
         context: Context,
         eventLoopGroup: EventLoopGroup,
         variables: [String: Map] = [:],
@@ -40,7 +61,30 @@ public final class Schema<RootType, Context> {
             return try graphql(
                 schema: schema,
                 request: request,
-                rootValue: root,
+                rootValue: resolver,
+                context: context,
+                eventLoopGroup: eventLoopGroup,
+                variableValues: variables,
+                operationName: operationName
+            )
+        } catch {
+            return eventLoopGroup.next().makeFailedFuture(error)
+        }
+    }
+    
+    func subscribe(
+        request: String,
+        resolver: Resolver,
+        context: Context,
+        eventLoopGroup: EventLoopGroup,
+        variables: [String: Map] = [:],
+        operationName: String? = nil
+    ) -> EventLoopFuture<SubscriptionResult> {
+        do {
+            return try graphqlSubscribe(
+                schema: schema,
+                request: request,
+                rootValue: resolver,
                 context: context,
                 eventLoopGroup: eventLoopGroup,
                 variableValues: variables,

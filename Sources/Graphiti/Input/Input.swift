@@ -1,23 +1,23 @@
 import GraphQL
 
-public final class Input<RootType, Context, InputObjectType : Decodable> : Component<RootType, Context> {
+public final class Input<Resolver, Context, InputObjectType : Decodable> : Component<Resolver, Context> {
     let fields: [InputFieldComponent<InputObjectType, Context>]
     
-    override func update(builder: SchemaBuilder) throws {
+    override func update(typeProvider: SchemaTypeProvider, coders: Coders) throws {
         let inputObjectType = try GraphQLInputObjectType(
             name: name,
             description: description,
-            fields: fields(provider: builder)
+            fields: fields(typeProvider: typeProvider)
         )
         
-        try builder.map(InputObjectType.self, to: inputObjectType)
+        try typeProvider.map(InputObjectType.self, to: inputObjectType)
     }
     
-    func fields(provider: TypeProvider) throws -> InputObjectConfigFieldMap {
-        var map: InputObjectConfigFieldMap = [:]
+    func fields(typeProvider: TypeProvider) throws -> InputObjectFieldMap {
+        var map: InputObjectFieldMap = [:]
         
         for field in fields {
-            let (name, field) = try field.field(provider: provider)
+            let (name, field) = try field.field(typeProvider: typeProvider)
             map[name] = field
         }
         
@@ -38,8 +38,16 @@ public extension Input {
     convenience init(
         _ type: InputObjectType.Type,
         as name: String? = nil,
-        _ fields: InputFieldComponent<InputObjectType, Context>...
+        @InputFieldComponentBuilder<InputObjectType, Context> _ fields: () -> InputFieldComponent<InputObjectType, Context>
     ) {
-        self.init(type: type, name: name, fields: fields)
+        self.init(type: type, name: name, fields: [fields()])
+    }
+    
+    convenience init(
+        _ type: InputObjectType.Type,
+        as name: String? = nil,
+        @InputFieldComponentBuilder<InputObjectType, Context> _ fields: () -> [InputFieldComponent<InputObjectType, Context>]
+    ) {
+        self.init(type: type, name: name, fields: fields())
     }
 }

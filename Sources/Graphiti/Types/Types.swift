@@ -1,9 +1,11 @@
-public final class Types<Root, Context> : Component<Root, Context> {
+import GraphQL
+
+public final class Types<Resolver, Context> : Component<Resolver, Context> {
     let types: [Any.Type]
     
-    override func update(builder: SchemaBuilder) throws {
-        builder.types = try types.map {
-            try builder.getNamedType(from: $0)
+    override func update(typeProvider: SchemaTypeProvider, coders: Coders) throws {
+        typeProvider.types = try types.map {
+            try typeProvider.getNamedType(from: $0)
         }
     }
     

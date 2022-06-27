@@ -4,9 +4,9 @@ public class InputField<InputObjectType, Context, FieldType> : InputFieldCompone
     let name: String
     var defaultValue: AnyEncodable?
     
-    override func field(provider: TypeProvider) throws -> (String, InputObjectField) {
+    override func field(typeProvider: TypeProvider) throws -> (String, InputObjectField) {
         let field = InputObjectField(
-            type: try provider.getInputType(from: FieldType.self, field: name),
+            type: try typeProvider.getInputType(from: FieldType.self, field: name),
             defaultValue: try defaultValue.map {
                 try MapEncoder().encode($0)
             },
@@ -27,6 +27,16 @@ public extension InputField {
     convenience init(
         _ name: String,
         at keyPath: KeyPath<InputObjectType, FieldType>
+    ) {
+        self.init(name: name)
+    }
+}
+
+public extension InputField {
+    convenience init<KeyPathType>(
+        _ name: String,
+        at keyPath: KeyPath<InputObjectType, KeyPathType>,
+        as: FieldType.Type
     ) {
         self.init(name: name)
     }

@@ -26,7 +26,7 @@ class StarWarsQueryTests : XCTestCase {
         
         api.execute(
             request: query,
-            context: api.context,
+            context: StarWarsContext(),
             on: group
         ).whenSuccess { result in
             XCTAssertEqual(result, expected)
@@ -67,7 +67,7 @@ class StarWarsQueryTests : XCTestCase {
         
         api.execute(
             request: query,
-            context: api.context,
+            context: StarWarsContext(),
             on: group
         ).whenSuccess { result in
             XCTAssertEqual(result, expected)
@@ -136,7 +136,7 @@ class StarWarsQueryTests : XCTestCase {
 
         api.execute(
             request: query,
-            context: api.context,
+            context: StarWarsContext(),
             on: group
         ).whenSuccess { result in
             XCTAssertEqual(result, expected)
@@ -167,7 +167,7 @@ class StarWarsQueryTests : XCTestCase {
 
         api.execute(
             request: query,
-            context: api.context,
+            context: StarWarsContext(),
             on: group
         ).whenSuccess { result in
             XCTAssertEqual(result, expected)
@@ -204,7 +204,7 @@ class StarWarsQueryTests : XCTestCase {
 
         api.execute(
             request: query,
-            context: api.context,
+            context: StarWarsContext(),
             on: group,
             variables: params
         ).whenSuccess { result in
@@ -228,7 +228,7 @@ class StarWarsQueryTests : XCTestCase {
 
         api.execute(
             request: query,
-            context: api.context,
+            context: StarWarsContext(),
             on: group,
             variables: params
         ).whenSuccess { result in
@@ -250,7 +250,7 @@ class StarWarsQueryTests : XCTestCase {
 
         api.execute(
             request: query,
-            context: api.context,
+            context: StarWarsContext(),
             on: group,
             variables: params
         ).whenSuccess { result in
@@ -282,7 +282,7 @@ class StarWarsQueryTests : XCTestCase {
 
         api.execute(
             request: query,
-            context: api.context,
+            context: StarWarsContext(),
             on: group
         ).whenSuccess { result in
             XCTAssertEqual(result, expected)
@@ -319,7 +319,7 @@ class StarWarsQueryTests : XCTestCase {
 
         api.execute(
             request: query,
-            context: api.context,
+            context: StarWarsContext(),
             on: group
         ).whenSuccess { result in
             XCTAssertEqual(result, expected)
@@ -360,7 +360,7 @@ class StarWarsQueryTests : XCTestCase {
 
         api.execute(
             request: query,
-            context: api.context,
+            context: StarWarsContext(),
             on: group
         ).whenSuccess { result in
             XCTAssertEqual(result, expected)
@@ -403,7 +403,7 @@ class StarWarsQueryTests : XCTestCase {
 
         api.execute(
             request: query,
-            context: api.context,
+            context: StarWarsContext(),
             on: group
         ).whenSuccess { result in
             XCTAssertEqual(result, expected)
@@ -436,7 +436,7 @@ class StarWarsQueryTests : XCTestCase {
 
         api.execute(
             request: query,
-            context: api.context,
+            context: StarWarsContext(),
             on: group
         ).whenSuccess { result in
             XCTAssertEqual(result, expected)
@@ -469,7 +469,7 @@ class StarWarsQueryTests : XCTestCase {
 
         api.execute(
             request: query,
-            context: api.context,
+            context: StarWarsContext(),
             on: group
         ).whenSuccess { result in
             XCTAssertEqual(result, expected)
@@ -509,7 +509,7 @@ class StarWarsQueryTests : XCTestCase {
 
         api.execute(
             request: query,
-            context: api.context,
+            context: StarWarsContext(),
             on: group
         ).whenSuccess { result in
             XCTAssertEqual(result, expected)
@@ -575,7 +575,7 @@ class StarWarsQueryTests : XCTestCase {
 
         api.execute(
             request: query,
-            context: api.context,
+            context: StarWarsContext(),
             on: group
         ).whenSuccess { result in
             XCTAssertEqual(result, expected)
@@ -615,7 +615,7 @@ class StarWarsQueryTests : XCTestCase {
 
         api.execute(
             request: query,
-            context: api.context,
+            context: StarWarsContext(),
             on: group
         ).whenSuccess { result in
             XCTAssertEqual(result, expected)
@@ -644,27 +644,26 @@ class StarWarsQueryTests : XCTestCase {
             }
         }
 
-        struct Root {
+        struct TestResolver {
             func nullableA(context: NoContext, arguments: NoArguments) -> A? {
                 return A()
             }
         }
         
         struct MyAPI : API {
-            var root: Root = Root()
-            var context: NoContext = NoContext()
+            var resolver: TestResolver = TestResolver()
             
-            let schema = try! Schema<Root, NoContext>(
-                Type(A.self,
-                    Field("nullableA", at: A.nullableA, as: (TypeReference<A>?).self),
-                    Field("nonNullA", at: A.nonNullA, as: TypeReference<A>.self),
+            let schema = try! Schema<TestResolver, NoContext> {
+                Type(A.self) {
+                    Field("nullableA", at: A.nullableA, as: (TypeReference<A>?).self)
+                    Field("nonNullA", at: A.nonNullA, as: TypeReference<A>.self)
                     Field("throws", at: A.throws)
-                ),
+                }
 
-                Query(
-                    Field("nullableA", at: Root.nullableA)
-                )
-            )
+                Query {
+                    Field("nullableA", at: TestResolver.nullableA)
+                }
+            }
         }
 
         let query = """
@@ -701,7 +700,7 @@ class StarWarsQueryTests : XCTestCase {
 
         api.execute(
             request: query,
-            context: api.context,
+            context: NoContext(),
             on: group
         ).whenSuccess { result in
             XCTAssertEqual(result, expected)
@@ -745,7 +744,7 @@ class StarWarsQueryTests : XCTestCase {
 
         api.execute(
             request: query,
-            context: api.context,
+            context: StarWarsContext(),
             on: group
         ).whenSuccess { result in
             XCTAssertEqual(result, expected)
@@ -784,7 +783,7 @@ class StarWarsQueryTests : XCTestCase {
 
         api.execute(
             request: query,
-            context: api.context,
+            context: StarWarsContext(),
             on: group
         ).whenSuccess { result in
             XCTAssertEqual(result, expected)
@@ -822,7 +821,7 @@ class StarWarsQueryTests : XCTestCase {
         
         api.execute(
             request: query,
-            context: api.context,
+            context: StarWarsContext(),
             on: group
         ).whenSuccess { result in
             XCTAssertEqual(result, expected)

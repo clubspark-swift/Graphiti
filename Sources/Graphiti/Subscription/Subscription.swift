@@ -1,6 +1,6 @@
 import GraphQL
 
-public final class Query<Resolver, Context> : Component<Resolver, Context> {
+public final class Subscription<Resolver, Context> : Component<Resolver, Context> {
     let fields: [FieldComponent<Resolver, Context>]
     
     let isTypeOf: GraphQLIsTypeOf = { source, _, _ in
@@ -8,7 +8,7 @@ public final class Query<Resolver, Context> : Component<Resolver, Context> {
     }
     
     override func update(typeProvider: SchemaTypeProvider, coders: Coders) throws {
-        typeProvider.query = try GraphQLObjectType(
+        typeProvider.subscription = try GraphQLObjectType(
             name: name,
             description: description,
             fields: fields(typeProvider: typeProvider, coders: coders),
@@ -36,16 +36,16 @@ public final class Query<Resolver, Context> : Component<Resolver, Context> {
     }
 }
 
-public extension Query {
+public extension Subscription {
     convenience init(
-        as name: String = "Query",
+        as name: String = "Subscription",
         @FieldComponentBuilder<Resolver, Context> _ fields: () -> FieldComponent<Resolver, Context>
     ) {
         self.init(name: name, fields: [fields()])
     }
     
     convenience init(
-        as name: String = "Query",
+        as name: String = "Subscription",
         @FieldComponentBuilder<Resolver, Context> _ fields: () -> [FieldComponent<Resolver, Context>]
     ) {
         self.init(name: name, fields: fields())

@@ -1,35 +1,35 @@
 import GraphQL
 
-public final class Mutation<RootType, Context> : Component<RootType, Context> {
-    let fields: [FieldComponent<RootType, Context>]
+public final class Mutation<Resolver, Context> : Component<Resolver, Context> {
+    let fields: [FieldComponent<Resolver, Context>]
     
     let isTypeOf: GraphQLIsTypeOf = { source, _, _ in
-        return source is RootType
+        return source is Resolver
     }
     
-    override func update(builder: SchemaBuilder) throws {
-        builder.mutation = try GraphQLObjectType(
+    override func update(typeProvider: SchemaTypeProvider, coders: Coders) throws {
+        typeProvider.mutation = try GraphQLObjectType(
             name: name,
             description: description,
-            fields: fields(provider: builder),
+            fields: fields(typeProvider: typeProvider, coders: coders),
             isTypeOf: isTypeOf
         )
     }
     
-    func fields(provider: TypeProvider) throws -> GraphQLFieldMap {
+    func fields(typeProvider: TypeProvider, coders: Coders) throws -> GraphQLFieldMap {
         var map: GraphQLFieldMap = [:]
         
         for field in fields {
-            let (name, field) = try field.field(provider: provider)
+            let (name, field) = try field.field(typeProvider: typeProvider, coders: coders)
             map[name] = field
         }
         
         return map
     }
     
-    init(
+    private init(
         name: String,
-        fields: [FieldComponent<RootType, Context>]
+        fields: [FieldComponent<Resolver, Context>]
     ) {
         self.fields = fields
         super.init(name: name)
@@ -39,8 +39,15 @@ public final class Mutation<RootType, Context> : Component<RootType, Context> {
 public extension Mutation {
     convenience init(
         as name: String = "Mutation",
-        _ fields: FieldComponent<RootType, Context>...
+        @FieldComponentBuilder<Resolver, Context> _ fields: () -> FieldComponent<Resolver, Context>
     ) {
-        self.init(name: name, fields: fields)
+        self.init(name: name, fields: [fields()])
+    }
+    
+    convenience init(
+        as name: String = "Mutation",
+        @FieldComponentBuilder<Resolver, Context> _ fields: () -> [FieldComponent<Resolver, Context>]
+    ) {
+        self.init(name: name, fields: fields())
     }
 }
