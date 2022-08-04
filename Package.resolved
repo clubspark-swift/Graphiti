@@ -3,7 +3,7 @@
     "pins": [
       {
         "package": "GraphQL",
-        "repositoryURL": "https://github.com/SportlabsTechnology/GraphQL.git",
+        "repositoryURL": "https://github.com/clubspark-swift/GraphQL.git",
         "state": {
           "branch": "nio2",
           "revision": "cdc5dad7918fab351e6c35107b3ea4e3beb5a5b5",
