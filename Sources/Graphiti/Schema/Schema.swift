@@ -554,6 +554,7 @@ public struct Schema<Root, Context, EventLoop: EventLoopGroup> {
     }
 
     public func execute(
+        mutationStrategy: MutationFieldExecutionStrategy = SerialFieldExecutionStrategy(),
         request: String,
         context: Context,
         eventLoopGroup: EventLoopGroup,
@@ -567,6 +568,7 @@ public struct Schema<Root, Context, EventLoop: EventLoopGroup> {
         }
 
         return try graphql(
+            mutationStrategy: mutationStrategy,
             schema: schema,
             request: request,
             context: context,
